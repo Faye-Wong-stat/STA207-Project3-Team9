@@ -1,0 +1,458 @@
+---
+title: "EDA: COVID-19 Worldwide between 2020 and 2021"
+author: "Team 9:Nathan Castle, Shanshan Chen and Fangyi Wang"
+date: "March 4th 2021"
+output:
+  html_document:
+    df_print: paged
+    number_sections: yes
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.pos = 'H')
+```
+
+
+# Abstract 
+
+<span style='color:black'> 
+With the onset of COVID-19 which began gaining traction and worldwide attention in early 2020, many began to seriously question the danger the disease posed for the planet. The World Health Organization, working directly within the United Nations, launched an effort to gather information on the coronavirus and its effects on people within all their different regional headquarters scattered across the world. With the WHO COVID-19 dataset, an exploratory data analysis was performed in order to answer whether the different WHO regions contributed to different averages in new cases and new deaths from coronavirus. And if there was a direct relationship to these WHO regions, which region attributed to the largest number of new cases and new deaths was also a direct questions of interest from this analysis. With the help of statistical software and modeling, it was shown that WHO regions are associated to different average numbers of new cases and deaths from the disease and the Region of the Americas showed the largest averages among these regions. From the conclusions of this analysis, further more specialized and studies can be done to determine what specific traits within these WHO regions contribute most to the difference in average numbers of new cases and deaths in order to better understand COVID-19 and how to lessen its effects.
+
+</span>
+
+# Introduction
+
+<span style='color:black'> 
+As of March 2021, nearly a year after the initial lockdowns for the prevention of COVID-19 started in the United States, most states and even countries around the world are still finding it difficult to control the spread of the disease and return to some sense of everyday life. In the United States alone there have been more than 28 million known cases of COVID-19 between January 2020 and March 2021 including over 500,000 deaths (CDC COVID Data Tracker). Because of the severity and the unknown components of this infectious disease, organizations like the World Health Organization, or WHO, have been compiling datasets about COVID-19 as a means to quantify and learn about the new disease affecting millions globally. With this in mind, an exploratory data analysis was performed on one such WHO COVID-19 dataset in order to see if there are any trends or relationships that can be determined as a means to combat the disease mortality rate. Variables such as specific WHO regions and countries are recorded as well as quantitative variables such as cumulative deaths and cases as well as new deaths and cases within the past seven days of the sample being taken. A question of interest arising from the dataset being internationally collected is if there are certain WHO regions that are showing statistically different average mortality rates to COVID-19 as a means of looking into whether certain regions possibly showed better or worse mortality rates than others and if so, which region was associated with the highest average new case mortality rate. Determining conclusions for these questions would result in a better understanding of how different WHO regions are handling the coronavirus and possibly lead to a deeper investigation into what possible variables do these regions have that are resulting in the increase or decrease of COVID-19 mortality. 
+
+</span>
+ 
+# Background 
+
+<span style='color:black'>
+The COVID-19 dataset utilized in this exploratory data analysis was provided from WHO, or the World Health Organization, which is an international organization founded in 1948 which primarily works within the United Nations to direct and coordinate international health systems (About WHO). The World Health Organization is an international institution and the data provided in the dataset contains information from many countries and regions all over the world. This allows the results of the analysis to be relatively generalized to all people from anywhere in the world, making the target population of the analysis all of humanity. The WHO coronavirus dataset is a time-series observational study collected by WHO reporters from several sources including household surveys, routine reporting by health services, and censuses (WHO Health Statistics). Though the collection method and participants weren't controlled or randomized due to the nature of the coronavirus, certain relationships and conclusions can still be made if these conditions and certain biases are taken into consideration. 
+
+WHO's COVID-19 dataset contains a few interesting variables used for the exploratory analysis. One such variable pertinent to the analysis is the data variable which records the date that the sample data was collected. Since this is a time-series dataset and our goal is to observe information related to novella coronavirus, the date of the data is crucial in seeing trends and relationships change over a period of time. Two other variables from the dataset include country and WHO region which contain which country the data was collected from and which WHO region the country the data is collected from falls into such as the African region or European region. Cumulative death and case numbers are also recorded in the dataset under similar variable names, but other variables names new cases and new deaths are present which reflect the number of cases or deaths from COVID-19 in the past seven days of the data collection date.
+</span> 
+
+# Descriptive analysis 
+
+<span style='color:black'> 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+library(rgeos)
+library(gplots)
+```
+
+```{r,include=FALSE}
+## data tidying, don't show in report
+world <- ne_countries(scale="medium",returnclass="sf")
+
+covid <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv")
+#str(covid)
+
+covid$Date_reported <- as.character(covid$Date_reported)
+colnames(covid)[3] <- "sovereignt"
+covid$sovereignt[which(covid$sovereignt=="Russian Federation")] <- "Russia"
+covid$sovereignt[which(covid$sovereignt=="Republic of Korea")] <- "South Korea"
+covid$sovereignt[which(covid$sovereignt=="Bolivia (Plurinational State of)")] <- "Bolivia"
+covid$sovereignt[which(covid$sovereignt=="Brunei Darussalam")] <- "Brunei"
+covid$sovereignt[which(covid$sovereignt=="Czechia")] <- "Czech Republic"
+covid$sovereignt[which(covid$sovereignt=="Timor-Leste")] <- "East Timor"
+covid$sovereignt[which(covid$sovereignt=="Micronesia (Federated States of)")] <- "Federated States of Micronesia"
+covid$sovereignt[which(covid$sovereignt=="Guinea-Bissau")] <- "Guinea Bissau"
+covid$sovereignt[which(covid$sovereignt=="Iran (Islamic Republic of)")] <- "Iran"
+covid$sovereignt[which(covid$sovereignt=="Côte d’Ivoire")] <- "Ivory Coast"
+covid$sovereignt[which(covid$sovereignt=="Kosovo[1]")] <- "Kosovo"
+covid$sovereignt[which(covid$sovereignt=="Lao People's Democratic Republic")] <- "Laos"
+covid$sovereignt[which(covid$sovereignt=="North Macedonia")] <- "Macedonia"
+covid$sovereignt[which(covid$sovereignt=="Cyprus")] <- "Northern Cyprus"
+covid$sovereignt[which(covid$sovereignt=="Congo")] <- "Republic of Congo"
+covid$sovereignt[which(covid$sovereignt=="Serbia")] <- "Republic of Serbia"
+covid$sovereignt[which(covid$sovereignt=="The United Kingdom")] <- "United Kingdom"
+covid$sovereignt[which(covid$sovereignt=="Somalia")] <- "Somaliland"
+covid$sovereignt[which(covid$sovereignt=="Swaziland")] <- "Switzerland"
+covid$sovereignt[which(covid$sovereignt=="Syrian Arab Republic")] <- "Syria"
+covid$sovereignt[which(covid$sovereignt=="Bahamas")] <- "The Bahamas"
+covid$sovereignt[which(covid$sovereignt=="Venezuela (Bolivarian Republic of)")] <- "Venezuela"
+covid$sovereignt[which(covid$sovereignt=="Viet Nam")] <- "Vietnam"
+
+#length(unique(covid$Country))
+#unique(covid$Date_reported)
+countries <- unique(covid$sovereignt)
+dates <- c("2020-01-28","2020-02-28","2020-03-28","2020-04-28","2020-05-28","2020-06-28","2020-07-28","2020-08-28","2020-09-28","2020-10-28","2020-11-28","2020-12-28","2021-01-28","2021-02-28")
+covid$WHO_region[which(covid$WHO_region=="EMRO")] <- "Eastern Mediterranean"
+covid$WHO_region[which(covid$WHO_region=="EURO")] <- "Europe"
+covid$WHO_region[which(covid$WHO_region=="AFRO")] <- "Africa"
+covid$WHO_region[which(covid$WHO_region=="WPRO")] <- "Western Pacific"
+covid$WHO_region[which(covid$WHO_region=="AMRO")] <- "Americas"
+covid$WHO_region[which(covid$WHO_region=="SEARO")] <- "South-East Asia"
+
+covid.month <- matrix(0, 236,15)
+covid.month <- as.data.frame(covid.month)
+covid.month[,1]<- countries
+for (i in 1:236){
+  for (j in 1:14){
+    covid.month[i,j+1] <- covid[which(covid$sovereignt==countries[i] & covid$Date_reported==dates[j] ),6]
+    #print(paste(i,j))
+  }
+}
+
+colnames(covid.month)[1] <- "sovereignt"
+dates.name <- c("Jan2020","Feb2020","Mar2020","Apr2020","May2020","June2020","July2020","Aug2020","Sept2020","Oct2020","Nov2020","Dec2020","Jan2021","Feb2021")
+colnames(covid.month)[2:15] <- dates.name
+
+covid.month <- cbind(covid.month,matrix(NA,236,15))
+colnames(covid.month)[16] <- "Region"
+colnames(covid.month)[17:30] <- paste("R.",dates.name)
+covid.month$Region <- covid$WHO_region[match(covid.month$sovereignt,covid$sovereignt)]
+
+covid.region <- aggregate(cbind(New_cases,Cumulative_cases)~Date_reported+WHO_region,data=covid,FUN=sum)
+region <- covid.month$Region
+for (i in 1:236){
+  for (j in 1:14){
+    covid.month[i,j+16] <- covid.region[which(covid.region$WHO_region==region[i] & covid.region$Date_reported==dates[j]),4]
+    #print(paste(i,j))
+  }
+}
+
+world.covid <- merge(world,covid.month,by="sovereignt",all.x=T)
+```
+
+```{r,include=FALSE}
+#missing values
+#sum(!complete.cases(covid))
+#covid <- covid[complete.cases(covid),]
+
+#negative numbers
+#negative <- c()
+#for (i in 1:nrow(covid)){
+#  if (any(covid[i,]<0)){
+#    negative <- cbind(negative,i)
+#  }
+#}
+#length(negative)
+#covid <- covid[-negative,]
+
+#summary statistics
+summary(covid)
+
+cumulative.cases <- c()
+cumulative.cases$countries <- countries
+cumulative.cases <- as.data.frame(cumulative.cases)
+cumulative.cases$cumulative.cases <- NA
+for (i in 1:length(countries)){
+  cumulative.cases$cumulative.cases[i] <- max(covid[covid$sovereignt==countries[i],6])
+}
+summary(cumulative.cases$cumulative.cases)
+covid[which(covid$Cumulative_cases==28468736),3]
+
+cumulative.death <- c()
+cumulative.death$countries <- countries
+cumulative.death <- as.data.frame(cumulative.death)
+cumulative.death$cumulative.death <- NA
+for (i in 1:length(countries)){
+  cumulative.death$cumulative.death[i] <- max(covid[covid$sovereignt==countries[i],8])
+}
+summary(cumulative.death$cumulative.death)
+covid[which(covid$Cumulative_deaths==515013),3]
+```
+
+The data set includes 101436 observations from January 3rd 2020 to March 5th 2021. The daily new cases, daily cumulative cases, daily new death, and daily cumulative death from 237 countries and 7 regions were collected. The data set also includes 856 observations that contain missing values, and 100 observations that contain negative values. It is impossible to have negative counts for cases or death. The observations with missing values and observations are removed from the data. 
+
+The average daily new cases across the world is 1147, and the maximum daily new cases is 402270. The average daily new death acorss the world is 25, and the maximum daily new death is 6409. Both averages seem relative low. This might due to, at the begining, the virus has not yet been fully recognised and rate of detecting the virus is slow. 
+
+As of March 5th 2021, the average cumulative cases among all the countries is 486456, and the maximum cumulative cases is 28468736 from the US. The average cumulative death among all the countries is 10821, and the maximum cumulative death is 515013 from the US. 
+
+```{r,echo=FALSE,warning=FALSE}
+par(mar = c(11, 4,0.5,2))
+plotmeans(New_cases~WHO_region,data=covid,las=2,xlab="")
+```
+
+From the above plot, it seems that the Americas, Europe and the South-East Asia have the highest daily new cases. Further data analysis will be done in Inferential Section of this report
+
+```{r,warning=FALSE,echo=FALSE}
+## plot daily new cases by region against dates
+covid$Date_reported <- as.Date(covid$Date_reported,"%Y-%m-%d")
+covid.Region <- aggregate(cbind(New_cases,Cumulative_cases)~Date_reported+WHO_region,data=covid,FUN=sum)
+
+Region <- unique(covid.Region$WHO_region)
+  
+#par(mfrow=c(2,3))
+#for (i in c(1:4,6,7)){
+#  plot(covid.Region$New_cases[which(covid.Region$WHO_region==Region[i])]~
+#         as.numeric(covid.Region$Date_reported[which(covid.Region$WHO_region==Region[i])]),
+#       type="l",xlab=NA,ylab="Daily New Cases",xaxt="n",
+#       main=Region[i],ylim=range(covid.Region$New_cases))
+#  axis.Date(1,at=seq(min(covid.Region$Date_reported),max(covid.Region$Date_reported),by="1 mon"),
+#            format="%Y-%m",las=2)
+#}
+
+ggplot(data=covid.Region,aes(x=Date_reported,y=New_cases,col=WHO_region)) + geom_point() + 
+  xlab("Time") + ylab("Daily New Cases") + ggtitle("Daily New Cases by Regions")
+```
+
+To see how daily new cases changes across regions, longitudinal plots are graphed above. The Americas and Europe appear to have high daily new cases starting September 2020. However South-East Asia doesn't seem to have very high daily new cases, which contradicts our result above. This might be due to different calculating methods. In the main effect plot, each country's daily new cases were taken into account for average daily new cases calculation. In the longitudianl plots, daily new cases were summed up from one region and plotted agains time. 
+
+```{r,echo=FALSE}
+## plot monthly cumulative cases by country
+for (i in c(3,7,11,14)){
+  print(ggplot(data=world.covid) + geom_sf(aes(fill=get(dates.name[i]))) + 
+          scale_fill_viridis_c(option="plasma",trans="sqrt",limits=range(covid.month[,2:15]),
+                               name=paste("cumulative cases")) + 
+          ggtitle(paste("Cumulative Cases in ",dates.name[i])))
+}
+```
+
+The monthly cumulative cases are plotted on world maps (only examples are shown above). Eventhough the focus of this analysis is new cases instead of cumulative cases. We decided it is imformative to show cumulative cases around the world. As of February 2021, the countries that appear to have the highest cumulative cases are the US, Brazil, Russia, and India. 
+
+```{r,echo=FALSE}
+## plot monthly cumulative cases by region
+for (i in c(3,7,11,14)){
+  print(ggplot(data=world.covid) + geom_sf(aes(fill=get(paste("R.",dates.name)[i]))) + 
+          scale_fill_viridis_c(option="plasma",trans="sqrt",limits=range(covid.month[,17:30]),
+                               name=paste("cumulative cases")) + 
+          ggtitle(paste("Cumulative Cases in ",paste("R.",dates.name)[i])))
+}
+```
+
+The monthly cumulative cases are plotted on world maps by region (only examples are shown above). As of February 2021, the regions with the highest cumulative cases are the Americas and Europe. 
+
+
+
+</span>
+
+
+ 
+
+# Inferential analysis 
+
+<span style="color:black">
+
+```{r include=FALSE}
+library(tidyverse)
+library(lme4)
+library(gplots)
+library(lubridate) #transform date to month
+covid <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv")
+```
+
+We propose the following mixed effects model.
+
+$$Y_{ijk} = \mu_{\cdot\cdot} + \alpha_i+\beta_j + (\alpha\beta)_{ij}+\epsilon_{ijk}, \ k=1,\ldots, n_{ij}, j=1,\ldots, b, i=1,\ldots, a$$
+with assumptions $\{\epsilon_{ijk}\}$ are i.i.d. $N(0,\sigma^2)$ and with constraints
+
+(i) $\sum \alpha_i =0$
+
+(ii) $\beta_j$ are i.i.d. $N(0,\sigma_{\beta}^2)$
+
+(iii) $\sum_i  (\alpha\beta)_{ij} =0$ for any $j$
+
+(iv) $(\alpha\beta)_{ij} \sim N(0,(1-1/a)\sigma^2_{\alpha\beta})$
+
+(v) ${\rm cov}( (\alpha\beta)_{ij},  (\alpha\beta)_{i'j})= -\sigma^2_{\alpha\beta}/a$
+
+(vi) ${\rm cov}( (\alpha\beta)_{ij},  (\alpha\beta)_{i'j'})=0$,  if $i\neq i'$ and $j\neq j'$
+
+(vii) $\{\epsilon_{ijk}\}$ are i.i.d. $N(0,\sigma^2)$
+
+(viii) $\{ \beta_j\}$, $\{(\alpha\beta)_{ij}\}$, $\{\epsilon_{ijk} \}$ are pairwise independent. 
+
+Since we are interested in average daily new cases/deaths in each region, WHO_region is treated as a fixed effect factor in the mixed effect model. Factor WHO_region has $a=7$ levels: AFRO($i=1$), AMRO($i=2$), EMRO($i=3$), EURO($i=4$), other($i=5$), SEARO($i=6$) and WPRO($i=7$). $\alpha_i$ represents the effect of level $i$ of WHO_region.
+
+```{r include=FALSE}
+covid$WHO_region <- as.factor(covid$WHO_region)
+# all of the following will also apply to new death after I have done for new_cases
+summary(covid$WHO_region)
+```
+
+ 
+Factor Month has $b=15$ levels which start from Jan 2020 to Mar 2021 with respect to $j=1,\ldots, 15$. The variable Month is not in the original dataset. This covid-19 dataset was collected during last 427 days. If we directly take Date_reported as a factor in the model, there are 427 levels which makes the fitting process very slowly. What's more, the daily new cases/deaths are in fact dependent. However, the mixed effect model requires the independence of $\{\beta_i\}$. To solve these two problems, a covariate variable Month was introduced. Firstly, the number of Month levels is reduced to 15. Secondly, in each month the average daily new cases/death can be assumed to be independent. For example, suppose the new cases/deaths in day 1 is observed, there is a great probability to predict the new cases/deaths in the following day. On the other side, even though the average daily new cases/deaths in month 1 is observed, it is difficult to predict the average daily new cases/deaths of the following month. As a covariate variable, Month is not in the columns of the original dataset. Month can be obtained from the variable Date_reported. $\beta_j$ represents the effect of Month $j$. Therefore, the assumption (ii) $\beta_j$ are i.i.d. is satisfied. $(\alpha\beta)_{ij}$ represents the interaction effect of WHO_region $i$ and Month $j$. $k=1,\ldots, n_{ij}$ represents index of observations in the cell of WHO_region $i$ and Month $j$. Values of $n_{ij}$ is the number of days in Month $i$ and can be found in the following table.
+
+```{r include=FALSE}
+covid <- covid %>% mutate(Month = paste(year(Date_reported),month(Date_reported)))
+covid$Month <- as.factor(covid$Month)
+covid$Month <- factor(covid$Month, levels = c("2020 1","2020 2","2020 3","2020 4","2020 5","2020 6","2020 7","2020 8","2020 9","2020 10","2020 11","2020 12","2021 1","2021 2","2021 3"))
+summary(covid$Month)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=TRUE}
+## it is reasonable to sum up the daily new cases in each region
+covid_newcases <- covid %>% group_by(Date_reported,WHO_region,Month) %>% summarise(New_cases = sum(New_cases))
+covid_newdeaths <- covid %>% group_by(Date_reported,WHO_region,Month) %>% summarise(New_deaths = sum(New_deaths))
+table(covid_newcases$Month,covid_newcases$WHO_region)[,1]
+```
+
+$Y_{ijk}$ represents daily new cases/deaths of day$k$ in WHO_region $i$ and Month $j$. This variable is not in the original dataset. The daily New_cases/New_deaths in all countries of a particular WHO_region in the original dataset are summed up to get the daily new cases/deaths in the corresponding WHO_region. Through this transformation, we get a new dataset which contains this response variable $Y_{ijk}$. We will use this new dataset in the following analysis. $\epsilon_{ijk}$ is the error term which is unable to be explained by the model. $\mu_{\cdot\cdot}$ is the overall mean daily new cases/deaths globally.
+
+Let's have a glance of the mean value side by side. The two plots below are the distribution mean by WHO_region. We can see that AMERO and EURO have two highest average daily new cases/deaths.
+
+```{r echo=FALSE, warning=FALSE}
+par(mfrow = c(2,1))
+plotmeans(New_cases ~ WHO_region, data = covid_newcases)
+plotmeans(New_deaths ~ WHO_region, data = covid_newdeaths)
+``` 
+ 
+The following two plots are the distribution mean by Month. We can see that average daily new cases/deaths is highest in Jan 2021. The daily new cases/deaths decrease after Jan 2021.
+
+```{r echo=FALSE, warning=FALSE}
+par(mfrow = c(2,1))
+plotmeans(New_cases ~ Month, data = covid_newcases)
+plotmeans(New_deaths ~ Month, data = covid_newdeaths)
+``` 
+ 
+The interaction mean plot indicates that the lines are not parallel. So, we will introduce the interaction term in our model.
+
+```{r echo=FALSE}
+interaction.plot(covid_newcases$Month, covid_newcases$WHO_region,covid_newcases$New_cases,col = 2:9)
+``` 
+ 
+```{r echo=FALSE}
+interaction.plot(covid_newdeaths$Month, covid_newdeaths$WHO_region,covid_newdeaths$New_deaths,col = 2:9)
+```
+
+After the proposed model is defined, we can fit it to the data. This is the output of fitting the model with new cases as response variable.
+
+```{r echo=FALSE}
+# model new cases : data + region + date*region
+# data is random effect to reduce the variance
+# region is fixed random effect because we are interested in the average daily new cases in the region
+lm1 = lmer(New_cases ~ WHO_region + (1|Month) + (1|Month:WHO_region) , data = covid_newcases)
+lm1
+```
+
+Then for the proposed model of new cases, we have 
+
+$\mu_{\cdot\cdot} = 6732$, $\alpha_1 = 0$, $\alpha_2 = 113547$, $\alpha_3 = 9512$, $\alpha_4 = 88487$, $\alpha_5 = -6718$, $\alpha_6 = 24405$ and $\alpha_7 = -2781$. 
+
+The following output is the fitted result of model of new deaths.
+
+```{r echo=FALSE}
+# model new deaths : data + region + date*region
+# data is random effect to reduce the variance
+# region is fixed random effect because we are interested in the average daily new cases in the region
+lm2 = lmer(New_deaths ~ WHO_region + (1|Month) + (1|Month:WHO_region) , data = covid_newdeaths)
+lm2
+```
+
+Then for the fitted model of new deaths, we have 
+
+$\mu_{\cdot\cdot} = 172.0$, $\alpha_1 = 0$, $\alpha_2 = 2767.7$, $\alpha_3 = 172.7$, $\alpha_4 = 1932.5$, $\alpha_5 = -171.4$, $\alpha_6 = 307.0$ and $\alpha_7 = -101.3$. 
+
+After we have fitted the proposed model, we can conduct F test on the interested question whether the different regions have different average daily new cases/deaths. Null hypothesis is $H_0: \alpha_1 = \alpha_2 = \cdots = \alpha_7$. Alternative hypothesis is $H_a:$ not all $\alpha_i$ are the same. The F-test is implemented by the function of anova in R.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# reduced model for new cases
+modred_1 = lmer(New_cases ~ (1|Month) + (1|Month:WHO_region) , data = covid_newcases)
+anova(modred_1,lm1)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+# reduced model for new deaths
+modred_2 = lmer(New_deaths ~ (1|Month) + (1|Month:WHO_region), data = covid_newdeaths)
+anova(modred_2,lm2)
+```
+
+In both F-test of new cases and new deaths, the p values are small enough, which means the region effect is significant. We can reject the null hypothesis and make a conclusion that different regions have different average daily new cases/deaths. 
+
+The second question is which WHO_region has the highest average daily new cases/deaths. From the fitted result, the region of AMRO have the highest average daily new cases/deaths. The pandemic AMRO is most severe.
+
+</span> 
+
+# Sensitivity analysis 
+
+<span style='color:black'> 
+
+We will do diagnostics of the proposed model through the tools of the residuals v.s. fitted value plot and normal QQ plot. The following plots are the residuals v.s. fitted value plot of the model of new cases/deaths.
+
+```{r echo=FALSE}
+plot(lm1,main = "New Cases Residuals v.s. Fitted Value Plot")
+```
+
+```{r echo=FALSE}
+plot(lm2,main = "New Deaths Residuals v.s. Fitted Value Plot")
+```
+
+```{r echo=FALSE}
+par(mfrow = c(2,2))
+residuals.std=rstudent(lm1)
+qqnorm(residuals.std, main = "New Cases Normal Q-Q plot")
+qqline(residuals.std)
+residuals.std=rstudent(lm2)
+qqnorm(residuals.std, main = "New Deaths Normal Q-Q plot")
+qqline(residuals.std)
+```
+
+The residuals v.s. fitted value plot indicates unequal variance. Normal QQ plot indicate a heavy tail. It seems that the transformation on the response variable should be apply to fix this problem. However, if we take a close look at the residuals v.s. fitted value plots, we can find that the left side is unequal variance and the right side is almost equal variance. If the transformation is applied, the unequal variance in the left side will become equal variance, at the same time the right side will become unequal variance. In fact, if we use log transformation on the response variable of new cases, we have the diagnostic plot and normal QQ plot below.
+
+```{r include=FALSE}
+hist(covid$New_cases)
+hist(log(covid$New_cases))
+hist(sqrt(log(covid$New_cases)))
+hist(log(log(covid$New_cases)))
+covid_log = covid_newcases
+covid_log$New_cases <- log(covid_newcases$New_cases)
+covid_log <- covid_log %>% filter(New_cases >= 0)
+lm1_log = lmer(New_cases ~ WHO_region + (1|Month) + (1|Month:WHO_region) , data = covid_log)
+lm1_log
+```
+
+```{r echo=FALSE}
+plot(lm1_log, main = "Log New Cases Residuals v.s. Fitted Value Plot")
+```
+
+```{r echo=FALSE}
+residuals.std=rstudent(lm1_log,main = "Log New Cases Normal Q-Q plot")
+qqnorm(residuals.std)
+qqline(residuals.std)
+```
+
+Both the residuals v.s. fitted value plot and normal QQ plot are not improved too much. Therefore, we will still keep the current model.
+
+</span>
+
+# Causal interpretation 
+
+<span style='color:black'> 
+Due to the nature of this exploratory data analysis, it was deemed unnecessary and contentious to include any causal interpretation based on this particular dataset. Some reasons for such an omission are due to the vastness of the target population and the manner in which the data was collected. The data come from a time-series observational study in which there is minimal control in the actual data collection processes as well as who is exposed to COVID-19, which leads to complexity in trying to minimize biases and extra variation from these uncontrollable variables. Although there are ways to reduce these biases, such as through the use of propensity scores, at this time it would seem more fit to determine less complex relations between COVID-19 cases and other factors as a means of producing viable results with the information available. And with a large population of humans with hugely varying circumstances all over the world, it makes determining an absolute causal relationship in which majority of all humans follow very tricky and requires more exact experimentation to determine.
+</span>
+
+# Discussion 
+
+<span style='color:black'> 
+According to the results of our analysis, it was determined that different WHO regions do show a direct association to new cases and new death from COVID-19. This conclusion provides evidence to suggest that potentially coronavirus protocols in certain regions are why new COVID-19 related cases and deaths are increasing or decreasing. It can also lead to the idea that possibly the novella coronavirus is reacting differently to certain variables within the local social and geographical settings of these regions.
+
+Aside from this result, the analysis of this dataset also concludes that the Region of the Americas subset of the World Health Organization is revealed to have the highest new death and cases of COVID-19. Compared to the other regions in the data, the Region of the Americas has a much larger average number of deaths and cases of coronavirus which could trigger a further, more rigorous analysis of why this is the case. With this information in mind, another study can be done by isolating other potential explanatory variables more specific to traits or policies that these WHO regions demonstrate and determining their overall role in COVD-19 related deaths and cases. 
+
+The dataset from WHO that the analysis is based on is broad spanning, containing continually updated bits of information from areas across the entire world, but lacks a wider array of potentially interesting variables that can be used to find more definite conclusions and relationships. Though this analysis provides a good start are determining a trend of different reactions to the outbreak of coronavirus in different WHO regions, continuing the analysis with an increased amount expertly chosen assortment of potential predictor variables could help to find other interesting results.
+
+</span> 
+
+
+# Acknowledgement {-}
+
+<span style='color:black'>
+Gratitude to Dr. Shizhe Chen and Mr. Yejiong Zhu for answering some of our questions along the way.
+</span>
+
+# Reference {-}
+
+<span style='color:black'>
+About WHO. Retrieved March 05, 2021, from https://www.who.int/about
+
+CDC COVID Data Tracker. (2021). Retrieved March 05, 2021, from https://covid.cdc.gov/covid-data-tracker/#trends_dailytrendscases
+
+WHO | Health Statistics. (2014, May 15). Retrieved March 05, 2021, from https://www.who.int/features/qa/73/en/
+
+</span> 
+
+
+# Session info {-}
+```{r}
+sessionInfo()
+```
