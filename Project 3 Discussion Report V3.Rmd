@@ -1,0 +1,55 @@
+---
+title: "Project 3 Discussion Report"
+author: "Team 9: Nathan Castle, Shanshan Chen, and Fangyi Wang"
+date: "March 11th 2021"
+output:
+  html_document:
+    df_print: paged
+    number_sections: yes
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.pos = 'H')
+```
+
+# Overall impression
+
+<span style='color:black'> 
+This report contained a statistical analysis of a WHO COVID-19 dataset in relation to the current global coronavirus pandemic. The analysis contained visual presentations of the dataset in various ways, such as global maps to see the change of COVID-19 deaths and cases over time, and used a mixed-effects model to try and answer key questions of interest. The model showed WHO regions to be associated with new average monthly COVID-19 cases and deaths and showed the Region of the Americas to have the highest new monthly averages, but some model assumptions weren't strongly met which makes the conclusions of the analysis have less of a definite result. Overall, the report provided clear visualizations and descriptions of the data that helped readers understand the reasons to be interested in this type of analysis, but could stand to resolve some concerns such as explaining explicitly violated assumptions for performing causal inference or including clearer caveats of the model when stating its conclusions. 
+</span>
+
+# Major comments 
+
+<span style='color:black'> 
+The background and visualizations in the descriptive analysis sections did a good job at breaking down and explaining the dataset and its variables. Both sections helped explain the reasoning for looking in the questions of interest and show how the data may be able to answer them. 
+
+The third and fourth plots in the inferential analysis section had numbers and other information text overlapping each other that made it a little difficult to read. It could possibly be solved by expanding the size and margins of the plots and possibly renaming the variables names with more concise names and use a legend to identify them. 
+
+This data analysis was only performed on determining if different regions have different daily new cases. While it is an interesting question, it doesn't help the real world problem much. Even if we know which region has the fastest increase of new COVID-19 cases, we don't know what caused the fast increase or how to prevent it. It might be more useful if the data analysis is performed on if certain policies can affect or decrease new cases, for example, wearing facial masks or stay-at-home order. 
+
+In the causal inference section of the report, several reasons were given for not conducting causal inference based on the nature of the dataset but no causal inference assumptions were referenced to clearly show why it was omitted. Though the reasoning is sound, it is more effective to explain the specific violations of the assumptions, such as how there may be interference between subjects such as vaccination differences or differences in access to healthcare which could alter the validity of potential outcomes and thereby causal inference.
+
+The discussion sections stated the conclusions to the questions of interest based on the model in the analysis. However, in the sensitivity analysis section it's clear that some of the assumptions are violated which may affect the validity of the results. It may be better to include a more obvious caveat that the conclusions should be taken with caution, but perhaps with by using a more structured study or other modeling techniques the data and model can be adjusted to clearly satisfy the model assumptions and provide stronger conclusions.
+
+</span> 
+
+
+# Minor comments 
+
+<span style='color:black'> 
+Some of the plots in the descriptive and inferential analysis sections seemed every similar and redundant. Although the plots were not exactly the same, perhaps selecting which plot helped did a better job at understanding and inspecting the questions of interest. Some of the plots had margin labels that contained the raw names of the variables in the dataset. An easy remedy to make the plots clearer is to change the name of the margins to a more precise name so the reader can clearly see what variables are being related and in what way. Also, it might be better to plot all the lines in the longitudinal plots in one graph instead of 6 graphs. 
+</span> 
+
+
+# Questions to address during the final presentation
+
+<span style='color:black'>
+Why did your team choose to only analyzing the COVID-19 dataset from WHO versus combining multiple similar COVID-19 datasets?
+
+Why did you include world maps of monthly cumulative cases by country and by region? What information can they provide in addition to your longitudinal plot? 
+
+Why did your team choose to stay with the original model instead of choosing to use the log-transformation model after doing the transformation and comparing their diagnostic plots?
+
+Why did you choose to use a mixed-effects model for analyzing this particular COVID-19 dataset?
+
+The covid cases data are essentially counts data, and a good way to analyze count data is using Poisson regression (log transformation). However, your log-transformed model didn't seem to improve compared to the original model, what could be the reason for that? 
+</span>
